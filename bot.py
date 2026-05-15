@@ -1,6 +1,6 @@
 from flask import Flask
 import threading
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler
 
 TOKEN = "8296488678:AAHo_wQ1pqbC6o3koT4MqWnmUrqTVV8t6xs"
 
@@ -17,12 +17,10 @@ def run_bot():
     updater = Updater(TOKEN, use_context=True)
     dp = updater.dispatcher
 
-dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("start", start))
 
-
-updater.start_polling()
-    
-updater.idle()
+    updater.start_polling()
+    updater.idle()
 
 threading.Thread(target=run_bot).start()
 
