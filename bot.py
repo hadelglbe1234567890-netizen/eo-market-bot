@@ -50,9 +50,9 @@ def signal(update, context):
 
         msg = "📊 تحليل حقيقي — فريم 5 دقائق\n"
 
-        msg += analyze("EUR/USD")
+        msg += analyze("EURUSD")
         msg += "\n━━━━━━━━━━━━\n"
-        msg += analyze("GBP/USD")
+        msg += analyze("GBPUSD")
 
         update.message.reply_text(msg)
 
