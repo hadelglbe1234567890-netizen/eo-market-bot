@@ -1,5 +1,7 @@
 from flask import Flask
 import threading
+import yfinance as yf
+import pandas as pd
 from telegram.ext import Updater, CommandHandler
 
 TOKEN = "8296488678:AAHo_wQ1pqbC6o3koT4MqWnmUrqTVV8t6xs"
@@ -10,44 +12,50 @@ app = Flask(__name__)
 def home():
     return "Bot Running"
 
-def choose_duration(adx, rsi):
-    if adx >= 30 and 45 <= rsi <= 65:
-        return "10 دقائق"
-    elif adx >= 25:
-        return "5 دقائق"
+def rsi(series, period=14):
+    delta = series.diff()
+    gain = delta.where(delta > 0, 0).rolling(period).mean()
+    loss = -delta.where(delta < 0, 0).rolling(period).mean()
+    rs = gain / loss
+    return 100 - (100 / (1 + rs))
+
+def analyze(symbol):
+    data = yf.download(symbol, period="5d", interval="5m", progress=False)
+
+    if data.empty:
+        return f"{symbol}: ما قدرت أجيب البيانات."
+
+    close = data["Close"]
+    high = data["High"]
+    low = data["Low"]
+
+    ema200 = close.ewm(span=200).mean().iloc[-1]
+    rsi_now = rsi(close).iloc[-1]
+    price = close.iloc[-1]
+
+    if price > ema200 and rsi_now > 55:
+        decision = "شراء محتمل"
+    elif price < ema200 and rsi_now < 45:
+        decision = "بيع محتمل"
     else:
-        return "2-3 دقائق"
+        decision = "انتظار"
+
+    return f"""
+{symbol}
+السعر: {price:.5f}
+EMA200: {ema200:.5f}
+RSI: {rsi_now:.2f}
+القرار: {decision}
+"""
 
 def start(update, context):
     update.message.reply_text("هلا! بوت EO Market شغال 🚀\nاكتب /signal")
 
 def signal(update, context):
-    msg = """
-📊 تحليل الأسواق — فريم 5 دقائق
-
-1️⃣ EUR/USD
-💰 نسبة الربح: 83%
-📌 القرار: انتظر
-⏳ مدة الصفقة: لا تدخل الآن
-
-السبب:
-- السعر قريب من EMA200
-- RSI قريب من التشبع
-- ننتظر تأكيد أوضح
-
-━━━━━━━━━━━━
-
-2️⃣ GBP/USD
-💰 نسبة الربح: 84%
-📌 القرار: بيع محتمل
-⏳ مدة الصفقة المقترحة: 5 دقائق
-
-السبب:
-- الاتجاه العام هابط
-- إذا السعر تحت EMA200
-- و RSI أقل من 45
-- و ADX فوق 25
-"""
+    msg = "📊 تحليل حقيقي — فريم 5 دقائق\n\n"
+    msg += analyze("EURUSD=X")
+    msg += "\n━━━━━━━━━━━━\n"
+    msg += analyze("GBPUSD=X")
     update.message.reply_text(msg)
 
 def run_bot():
