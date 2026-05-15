@@ -4,7 +4,7 @@ import requests
 from telegram.ext import Updater, CommandHandler
 
 TOKEN = "8296488678:AAEE60UKeziTitmzGZzorxHffZcV9VZp7bY"
-API_KEY = "‏b0feb8b1d8ba4db0ac256fb296f3c23d"
+API_KEY = "‏bfbc5e368e4f4aa1944a9a1be87c3ae9"
 
 app = Flask(__name__)
 
