@@ -3,7 +3,7 @@ import threading
 import requests
 from telegram.ext import Updater, CommandHandler
 
-TOKEN = "‏8296488678:AAHo_wQ1pqbC6o3koT4MqWnmUrqTVV8t6xs"
+TOKEN = "8296488678:AAGX93yKew0WSgGZrLKAANvC1LJCbcYBpQ8"
 API_KEY = "‏b0feb8b1d8ba4db0ac256fb296f3c23d"
 
 app = Flask(__name__)
