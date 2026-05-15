@@ -17,29 +17,33 @@ def start(update, context):
 def signal(update, context):
     update.message.reply_text("⏳ جاري تحليل EUR/USD و GBP/USD...")
 
-    msg = "📊 تحليل حقيقي — فريم 5 دقائق\n\n"
+    try:
+        msg = "📊 تحليل حقيقي — فريم 5 دقائق\n\n"
 
-    for symbol, name in [("EURUSD=X", "EUR/USD"), ("GBPUSD=X", "GBP/USD")]:
-        data = yf.download(symbol, period="5d", interval="5m", progress=False)
+        for symbol, name in [("EURUSD=X", "EUR/USD"), ("GBPUSD=X", "GBP/USD")]:
+            data = yf.download(symbol, period="5d", interval="5m", progress=False)
 
-        close = data["Close"]
-        price = float(close.iloc[-1])
-        ema200 = float(close.ewm(span=200).mean().iloc[-1])
+            if data.empty:
+                msg += f"{name}\n❌ ما قدرت أجيب بيانات السوق\n\n"
+                continue
 
-        delta = close.diff()
-        gain = delta.clip(lower=0).rolling(14).mean()
-        loss = (-delta.clip(upper=0)).rolling(14).mean()
-        rsi = float((100 - (100 / (1 + gain / loss))).iloc[-1])
+            close = data["Close"]
+            price = float(close.iloc[-1])
+            ema200 = float(close.ewm(span=200).mean().iloc[-1])
 
-        if price > ema200 and rsi > 55:
-            decision = "شراء محتمل"
-        elif price < ema200 and rsi < 45:
-            decision = "بيع محتمل"
-        else:
-            decision = "انتظار"
+            delta = close.diff()
+            gain = delta.clip(lower=0).rolling(14).mean()
+            loss = (-delta.clip(upper=0)).rolling(14).mean()
+            rsi = float((100 - (100 / (1 + gain / loss))).iloc[-1])
 
-        msg += f"""
-{name}
+            if price > ema200 and rsi > 55:
+                decision = "شراء محتمل"
+            elif price < ema200 and rsi < 45:
+                decision = "بيع محتمل"
+            else:
+                decision = "انتظار"
+
+            msg += f"""{name}
 السعر: {price:.5f}
 EMA200: {ema200:.5f}
 RSI: {rsi:.2f}
@@ -48,7 +52,10 @@ RSI: {rsi:.2f}
 ━━━━━━━━━━━━
 """
 
-    update.message.reply_text(msg)
+        update.message.reply_text(msg)
+
+    except Exception as e:
+        update.message.reply_text(f"❌ خطأ أثناء التحليل:\n{e}")
 
 def run_bot():
     updater = Updater(TOKEN, use_context=True)
