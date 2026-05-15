@@ -3,7 +3,8 @@ import threading
 import requests
 from telegram.ext import Updater, CommandHandler
 
-TOKEN = "8296488678:AAHo_wQ1pqbC6o3koT4MqWnmUrqTVV8t6xs"
+TOKEN = "‏8296488678:AAHo_wQ1pqbC6o3koT4MqWnmUrqTVV8t6xs"
+API_KEY = "‏b0feb8b1d8ba4db0ac256fb296f3c23d"
 
 app = Flask(__name__)
 
@@ -11,81 +12,57 @@ app = Flask(__name__)
 def home():
     return "Bot Running"
 
-def get_prices(symbol):
-    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?range=5d&interval=5m"
-    r = requests.get(url, timeout=10)
-    data = r.json()["chart"]["result"][0]
-    closes = data["indicators"]["quote"][0]["close"]
-    closes = [c for c in closes if c is not None]
-    return closes
+def analyze(symbol):
 
-def ema(values, period=200):
-    k = 2 / (period + 1)
-    e = values[0]
-    for price in values[1:]:
-        e = price * k + e * (1 - k)
-    return e
+    url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval=5min&outputsize=50&apikey={API_KEY}"
 
-def rsi(values, period=14):
-    gains = []
-    losses = []
-    for i in range(1, len(values)):
-        diff = values[i] - values[i - 1]
-        gains.append(max(diff, 0))
-        losses.append(abs(min(diff, 0)))
+    r = requests.get(url)
+    data = r.json()
 
-    avg_gain = sum(gains[-period:]) / period
-    avg_loss = sum(losses[-period:]) / period
+    closes = [float(x["close"]) for x in data["values"]]
 
-    if avg_loss == 0:
-        return 100
+    price = closes[0]
+    avg = sum(closes[:20]) / 20
 
-    rs = avg_gain / avg_loss
-    return 100 - (100 / (1 + rs))
-
-def analyze(symbol, name):
-    prices = get_prices(symbol)
-
-    if len(prices) < 200:
-        return f"{name}\n❌ البيانات غير كافية الآن\n"
-
-    price = prices[-1]
-    ema200 = ema(prices[-200:], 200)
-    rsi_now = rsi(prices)
-
-    if price > ema200 and rsi_now > 55:
-        decision = "شراء محتمل"
-    elif price < ema200 and rsi_now < 45:
-        decision = "بيع محتمل"
+    if price > avg:
+        decision = "شراء 🟢"
     else:
-        decision = "انتظار"
+        decision = "بيع 🔴"
 
     return f"""
-{name}
-السعر: {price:.5f}
-EMA200: {ema200:.5f}
-RSI: {rsi_now:.2f}
-القرار: {decision}
+📊 {symbol}
+
+💰 السعر الحالي: {price}
+📈 المتوسط: {round(avg,5)}
+
+📌 القرار: {decision}
+⏳ الفريم: 5 دقائق
 """
 
 def start(update, context):
     update.message.reply_text("🚀 هلا! بوت EO Market شغال\nاكتب /signal")
 
 def signal(update, context):
+
     update.message.reply_text("⏳ جاري تحليل EUR/USD و GBP/USD...")
 
     try:
-        msg = "📊 تحليل حقيقي — فريم 5 دقائق\n\n"
-        msg += analyze("EURUSD=X", "EUR/USD")
+
+        msg = "📊 تحليل حقيقي — فريم 5 دقائق\n"
+
+        msg += analyze("EUR/USD")
         msg += "\n━━━━━━━━━━━━\n"
-        msg += analyze("GBPUSD=X", "GBP/USD")
+        msg += analyze("GBP/USD")
+
         update.message.reply_text(msg)
 
     except Exception as e:
         update.message.reply_text(f"❌ خطأ أثناء التحليل:\n{e}")
 
 def run_bot():
+
     updater = Updater(TOKEN, use_context=True)
+
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler("start", start))
