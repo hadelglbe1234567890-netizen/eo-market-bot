@@ -17,9 +17,15 @@ def run_bot():
     updater = Updater(TOKEN, use_context=True)
     dp = updater.dispatcher
 
-    dp.add_handler(CommandHandler("start", start))
+dp.add_handler(CommandHandler("start", start))
 
-    updater.start_polling()
+def echo(update, context):
+    update.message.reply_text(update.message.text)
+
+dp.add_handler(MessageHandler(Filters.text, echo))
+
+updater.start_polling()
+    
     updater.idle()
 
 threading.Thread(target=run_bot).start()
