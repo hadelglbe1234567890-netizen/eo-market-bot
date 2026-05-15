@@ -22,7 +22,7 @@ dp.add_handler(CommandHandler("start", start))
 
 updater.start_polling()
     
-    updater.idle()
+updater.idle()
 
 threading.Thread(target=run_bot).start()
 
