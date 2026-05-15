@@ -19,10 +19,6 @@ def run_bot():
 
 dp.add_handler(CommandHandler("start", start))
 
-def echo(update, context):
-    update.message.reply_text(update.message.text)
-
-dp.add_handler(MessageHandler(Filters.text, echo))
 
 updater.start_polling()
     
